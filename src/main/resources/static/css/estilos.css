@@ -1,0 +1,36 @@
+*{
+	font-size: 14px;
+}
+label {
+	font-weight: 600;
+}
+
+.table td {
+	vertical-align: inherit;
+}
+
+#new-client {
+	margin-bottom: 4px; 
+}
+
+#main-container {
+	margin-top: 2%;
+}
+
+#td-buttons {
+	display: flex;
+	justify-content: center;
+}
+
+#editar {
+	padding: 3px 12px 3px 12px; 
+}
+
+.content-pagination {
+	display: flex;
+	justify-content: center;	
+}
+
+footer {
+	margin-bottom: 0;
+}
