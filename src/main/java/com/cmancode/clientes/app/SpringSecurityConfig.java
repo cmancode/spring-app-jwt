@@ -6,12 +6,18 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import com.cmancode.clientes.app.auth.filter.JWTAuthenticationFilter;
 import com.cmancode.clientes.app.outh.handler.LoginSucessHandler;
 import com.cmancode.clientes.app.service.JpaUserDetailsService;
 
-@EnableGlobalMethodSecurity(securedEnabled = true)
+
+/*
+ * Configuración de spring security
+ * */
+@EnableGlobalMethodSecurity(securedEnabled = true, prePostEnabled = true)
 @Configuration
 public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 	
@@ -22,7 +28,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 	@Autowired
 	private BCryptPasswordEncoder passwordEncoder;
 	
-	@Autowired
+	@Autowired //Inyección para trabajar con base de datos
 	private JpaUserDetailsService userDetailsService;
 	
 	@Override
@@ -37,13 +43,17 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 		.antMatchers("/detalle/**").hasAnyRole("ADMIN")
 		.antMatchers("/detalle/**").hasAnyRole("USER")*/
 		.anyRequest().authenticated()
-		.and()
+		/*.and()
 		.formLogin()
 			.successHandler(seccessHandler)
 			.loginPage("/login").permitAll()
 		.and()
 		.logout().permitAll()
-		.and().exceptionHandling().accessDeniedPage("/error_403");
+		.and().exceptionHandling().accessDeniedPage("/error_403") //Manejo de página de error*/
+		.and()
+		.addFilter(new JWTAuthenticationFilter(authenticationManager())) //Se obtiene la autenticación por medio de método que se hereda de la clase padre
+		.csrf().disable()
+		.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS); //Inhabilita el uso de sesiones para trabajar en REST
 	}
 
 	@Autowired

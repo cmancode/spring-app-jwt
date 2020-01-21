@@ -5,12 +5,12 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.cmancode.app</groupId>
-	<artifactId>spring-boot-app</artifactId>
+	<artifactId>spring-boot-app-jwt</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>spring-boot-app</name>
-	<description>Demo project for Spring Boot</description>
+	<name>spring-boot-app-jwt</name>
+	<description>Aplicación donde se implemetará Json Web Token</description>
 
 	<!-- <parent> -->
 	<!-- <groupId>org.springframework.boot</groupId> -->
@@ -55,6 +55,25 @@
 		<dependency>
 			<groupId>org.thymeleaf.extras</groupId>
 			<artifactId>thymeleaf-extras-springsecurity5</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-api</artifactId>
+			<version>0.10.7</version>
+		</dependency>
+
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-impl</artifactId>
+			<version>0.10.7</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-jackson</artifactId>
+			<version>0.10.7</version>
+			<scope>runtime</scope>
 		</dependency>
 
 		<dependency>
