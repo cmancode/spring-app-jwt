@@ -2,6 +2,8 @@ package com.cmancode.clientes.app.auth.filter;
 
 import java.io.IOException;
 import java.security.Key;
+import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,11 +17,18 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
 //import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.util.AntPathMatcher;
 
+import com.cmancode.clientes.app.model.Usuario;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -34,6 +43,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 	//Se permite que realice la consulta con las credenciales ingresadas a la base de datos
 	public JWTAuthenticationFilter(AuthenticationManager authManager) {
 		this.authManager = authManager;
+		//setRequiresAuthenticationRequestMatcher(new AntPathRequestMatcher("/login", "POST"));
 	}
 
 	@Override
@@ -43,15 +53,30 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 		String username = obtainUsername(request); //Métodos heredados
 		String password = obtainPassword(request);
 
-		if (username == null) {
-			username = "";
+		if(username != null && password != null) {
+			logger.info("Datos ingresados por (form-data) username: "+username);
+			logger.info("Datos ingresados por (form-data) username: "+password);
+		}else {
+			
+			Usuario usuario = null;
+			
+			try {
+				//Converting request data to User Class
+				usuario = new ObjectMapper().readValue(request.getInputStream(), Usuario.class);
+				username = usuario.getUsername();
+				password = usuario.getPassword();
+				
+				logger.info("Datos ingresados por (raw) username: "+ username);
+				logger.info("Datos ingresados por (raw) username: "+ password);
+				
+			} catch (JsonParseException e) {
+				e.printStackTrace();
+			} catch (JsonMappingException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
-
-		if (password == null) {
-			password = "";
-		}
-		
-		logger.info(username.concat(" ").concat(password));
 		
 		username = username.trim();
 		
@@ -69,11 +94,19 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 		String username = authResult.getName();
 		//String username = ((User) authResult.getPrincipal()).getUsername();
 		
+		Collection<? extends GrantedAuthority> roles = authResult.getAuthorities();
+		
+		Claims reclamandoRoles = Jwts.claims();
+		reclamandoRoles.put("authorities", new ObjectMapper().writeValueAsString(roles));
+		
 		//Gendering Token
 		String tokenGenerated = Jwts.builder()
-								.setSubject(username)
-								.signWith(SECRET_KEY)
-								.compact();
+				.setClaims(reclamandoRoles) //Roles
+				.setSubject(username) //User
+				.signWith(SECRET_KEY)
+				.setIssuedAt(new Date())
+				.setExpiration(new Date(System.currentTimeMillis() + 3600000L))
+				.compact();
 		
 		response.addHeader("Authorization", "Bearer "+tokenGenerated);
 		Map<String, Object> body = new HashMap<String, Object>();
@@ -85,4 +118,19 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 		response.setContentType("application/json");
 	}
 
+	@Override
+	protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
+			AuthenticationException failed) throws IOException, ServletException {
+
+		Map<String, Object> body = new HashMap<String, Object>();
+		body.put("mensaje", "El usuario o la contrasela es incorrecto");
+		response.getWriter().write(new ObjectMapper().writeValueAsString(body));
+		response.setStatus(401);
+		response.setContentType("application/json");
+		
+	}
+
+	
+	
+	
 }
