@@ -10,6 +10,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import com.cmancode.clientes.app.auth.filter.JWTAuthenticationFilter;
+import com.cmancode.clientes.app.auth.filter.JWTAuthorizationFilter;
+import com.cmancode.clientes.app.auth.service.JWTService;
 import com.cmancode.clientes.app.outh.handler.LoginSucessHandler;
 import com.cmancode.clientes.app.service.JpaUserDetailsService;
 
@@ -31,6 +33,9 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 	@Autowired //Inyección para trabajar con base de datos
 	private JpaUserDetailsService userDetailsService;
 	
+	@Autowired
+	private JWTService jwtService;
+	
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
 		
@@ -51,7 +56,8 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 		.logout().permitAll()
 		.and().exceptionHandling().accessDeniedPage("/error_403") //Manejo de página de error*/
 		.and()
-		.addFilter(new JWTAuthenticationFilter(authenticationManager())) //Se obtiene la autenticación por medio de método que se hereda de la clase padre
+		.addFilter(new JWTAuthenticationFilter(authenticationManager(), jwtService))
+		.addFilter(new JWTAuthorizationFilter(authenticationManager(), jwtService))//Se obtiene la autenticación por medio de método que se hereda de la clase padre
 		.csrf().disable()
 		.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS); //Inhabilita el uso de sesiones para trabajar en REST
 	}

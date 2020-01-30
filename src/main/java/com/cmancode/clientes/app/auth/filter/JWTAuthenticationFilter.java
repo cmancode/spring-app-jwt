@@ -23,6 +23,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.util.AntPathMatcher;
 
+import com.cmancode.clientes.app.auth.service.JWTService;
 import com.cmancode.clientes.app.model.Usuario;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -35,15 +36,14 @@ import io.jsonwebtoken.security.Keys;
 
 public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
-	
-	private static final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 	private AuthenticationManager authManager;
-		
+	private JWTService jwtService;
 	
 	//Se permite que realice la consulta con las credenciales ingresadas a la base de datos
-	public JWTAuthenticationFilter(AuthenticationManager authManager) {
+	public JWTAuthenticationFilter(AuthenticationManager authManager, JWTService jwtService) {
 		this.authManager = authManager;
 		//setRequiresAuthenticationRequestMatcher(new AntPathRequestMatcher("/login", "POST"));
+		this.jwtService = jwtService;
 	}
 
 	@Override
@@ -91,27 +91,13 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 	protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
 			Authentication authResult) throws IOException, ServletException {
 
-		String username = authResult.getName();
-		//String username = ((User) authResult.getPrincipal()).getUsername();
 		
-		Collection<? extends GrantedAuthority> roles = authResult.getAuthorities();
-		
-		Claims reclamandoRoles = Jwts.claims();
-		reclamandoRoles.put("authorities", new ObjectMapper().writeValueAsString(roles));
-		
-		//Gendering Token
-		String tokenGenerated = Jwts.builder()
-				.setClaims(reclamandoRoles) //Roles
-				.setSubject(username) //User
-				.signWith(SECRET_KEY)
-				.setIssuedAt(new Date())
-				.setExpiration(new Date(System.currentTimeMillis() + 3600000L))
-				.compact();
+		String tokenGenerated = this.jwtService.createToken(authResult);
 		
 		response.addHeader("Authorization", "Bearer "+tokenGenerated);
 		Map<String, Object> body = new HashMap<String, Object>();
 		body.put("token", tokenGenerated);
-		body.put("username", username);
+		body.put("username", authResult.getName());
 		
 		response.getWriter().write(new ObjectMapper().writeValueAsString(body));
 		response.setStatus(200);
